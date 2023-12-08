@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-# @Time: 2023/6/8 9:05
-# @Auth: ZhangQingFeng
-# @File: build_masterkey_blindkey.py
-# @IDE: PyCharm
-# @Email: zhangqingfeng0105@163.com
+
 import datetime
 import struct
 import base64
@@ -12,8 +8,7 @@ from blind_key_algorithm import *
 
 def build_onion_address(pubkey_string):
     '''
-    根据HS的主身份公钥(32字节),计算onion地址
-    :param pubkey_string:  HS的主身份公钥, 32字节
+    :param pubkey_string:  
     :return:
     '''
 
@@ -23,7 +18,7 @@ def build_onion_address(pubkey_string):
     PUBKEY = bytearray.fromhex(pubkey_string)
     VERSION = 3
 
-    #15s32s1b表示3个拼接字符串,第一个占15s,第二个占32s, 最后一个占1b
+    #15s32s1b
     data = struct.pack('15s32s1b', PREFIX, PUBKEY, VERSION)
     checksum = hashlib.sha3_256(data).digest()
 
@@ -32,24 +27,20 @@ def build_onion_address(pubkey_string):
 
     address = struct.pack('!32s2sb', PUBKEY, checksum, VERSION)
     onion_addr = base64.b32encode(address).decode().lower()
-    print("onion地址为:",onion_addr)
     return onion_addr
 
 def extract_master_pubkey(onion_addresss):
     '''
-    提取onion地址中的HS主身份公钥
     :param onion_addresss:
     :return:
     '''
     onion_b32decode = base64.b32decode(onion_addresss.upper().encode())
     master_key = struct.unpack('!32s2sb',onion_b32decode)[0]
-    print("提取后的master-key:",master_key.hex().upper())
     return master_key
 
 def calculate_period(end_time=None):
     '''
-    计算周期数
-    :param end_time:  符合格式2023-06-07
+    :param end_time:  2023-06-07
     :return:
     '''
     if not end_time:
@@ -61,7 +52,6 @@ def calculate_period(end_time=None):
 
 def build_blind_key(master_pubkey,time_control=None,is_previous_blindkey=False):
     '''
-    根据主身份密钥生成盲化密钥
     :param master_pubkey:
     :return:
     '''
@@ -81,13 +71,11 @@ def build_blind_key(master_pubkey,time_control=None,is_previous_blindkey=False):
 
     data = struct.pack('29s32s158s25s', blind_str, PUBKEY, str_ed25519_basepoint_byte, nonce)
     blind_key = hashlib.sha3_256(data).digest()
-    # print("生成的盲化密钥param:",blind_key.hex().upper())
     return blind_key
 
 
 def blindPK(pk, param):
     '''
-    使用主身份公钥和param参数构建盲化密钥
     :param pk:
     :param param:
     :return:
@@ -98,20 +86,14 @@ def blindPK(pk, param):
 
 def main_helper():
     '''
-    主函数测试
     :return:
     '''
     pubkey_string = "5492FEFE4C5F5B2ED70BBB6B00A3E8551DE1B5EE06F6791346CE98AB0C891704"
-    print("输入的HS公钥为:", pubkey_string)
     onion_address = build_onion_address(pubkey_string)
     master_pubkey_byte = extract_master_pubkey(onion_address)
     blind_key_param_byte = build_blind_key(master_pubkey_byte)
     blinke_pubkey_byte = blindPK(master_pubkey_byte,blind_key_param_byte)
     print(blinke_pubkey_byte.hex().upper())
-
-
-# if __name__ == '__main__':
-#     main_helper()
 
 
 
